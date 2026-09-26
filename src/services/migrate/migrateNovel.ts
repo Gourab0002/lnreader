@@ -3,7 +3,7 @@ import {
   getNovelByPath,
   insertNovelAndChapters,
 } from '@database/queries/NovelQueries';
-import { getNovelChapters } from '@database/queries/ChapterQueries';
+import { getAllNovelChaptersForBackup } from '@database/queries/ChapterQueries';
 
 import { fetchNovel } from '@services/plugin/fetch';
 import { parseChapterNumber } from '@utils/parseChapterNumber';
@@ -75,11 +75,13 @@ export const migrateNovel = async (
     isRunning: true,
   }));
 
-  let fromChapters = await getNovelChapters(fromNovel.id);
+  // The chapter list UI query stops at 1000 rows. Migration has to copy read
+  // state for every chapter, or everything past that cap stays unread.
+  let fromChapters = await getAllNovelChaptersForBackup(fromNovel.id);
   let toNovel = await getNovelByPath(toNovelPath, pluginId);
   let toChapters: ChapterInfo[];
   if (toNovel) {
-    toChapters = await getNovelChapters(toNovel.id);
+    toChapters = await getAllNovelChaptersForBackup(toNovel.id);
   } else {
     const fetchedNovel = await fetchNovel(pluginId, toNovelPath);
     await insertNovelAndChapters(pluginId, fetchedNovel);
@@ -87,7 +89,7 @@ export const migrateNovel = async (
     if (!toNovel) {
       return;
     }
-    toChapters = await getNovelChapters(toNovel.id);
+    toChapters = await getAllNovelChaptersForBackup(toNovel.id);
   }
 
   await dbManager.write(async tx => {

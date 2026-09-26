@@ -681,5 +681,37 @@ describe('LibraryQueries', () => {
       expect(novels).toHaveLength(2);
       expect(novels.map(n => n.name).sort()).toEqual(['Novel 1', 'Novel 2']);
     });
+
+    it('applies smart update filters when updating a category', async () => {
+      const categoryId = await insertTestCategory(testDb, {
+        name: 'Updating',
+      });
+      const ongoingId = await insertTestNovel(testDb, {
+        chaptersUnread: 0,
+        inLibrary: true,
+        isLocal: false,
+        lastReadAt: '2026-07-25',
+        name: 'Ongoing Novel',
+        status: 'Ongoing',
+      });
+      const completedId = await insertTestNovel(testDb, {
+        chaptersUnread: 0,
+        inLibrary: true,
+        isLocal: false,
+        lastReadAt: '2026-07-25',
+        name: 'Completed Novel',
+        status: 'Completed',
+      });
+      await insertTestNovelCategory(testDb, ongoingId, categoryId);
+      await insertTestNovelCategory(testDb, completedId, categoryId);
+
+      const novels = await getLibraryWithCategory(categoryId, true, {
+        skipCompleted: true,
+        skipUnstarted: false,
+        skipWithUnread: false,
+      });
+
+      expect(novels.map(novel => novel.name)).toEqual(['Ongoing Novel']);
+    });
   });
 });

@@ -129,8 +129,29 @@ describe('updateLibrary', () => {
 
     await updateLibrary({ categoryId: 4 }, jest.fn(), jest.fn());
 
-    expect(mockedGetLibraryWithCategory).toHaveBeenCalledWith(4, true);
+    expect(mockedGetLibraryWithCategory).toHaveBeenCalledWith(4, true, {
+      skipCompleted: false,
+      skipUnstarted: false,
+      skipWithUnread: false,
+    });
     expect(mockedGetLibraryNovels).not.toHaveBeenCalled();
+  });
+
+  it('passes smart update preferences to a category update', async () => {
+    mockedGetMMKVObject.mockReturnValue({
+      smartUpdateSkipCompleted: true,
+      smartUpdateSkipUnstarted: true,
+      smartUpdateSkipWithUnread: false,
+    });
+    mockedGetLibraryWithCategory.mockResolvedValue([]);
+
+    await updateLibrary({ categoryId: 4 }, jest.fn(), jest.fn());
+
+    expect(mockedGetLibraryWithCategory).toHaveBeenCalledWith(4, true, {
+      skipCompleted: true,
+      skipUnstarted: true,
+      skipWithUnread: false,
+    });
   });
 
   it('passes smart update preferences to the global update query', async () => {

@@ -90,7 +90,10 @@ const MIGRATION_STATEMENTS = [
  */
 export function createTestDb() {
   // Create in-memory database
-  const sqlite = open({ name: ':memory:' });
+  // op-sqlite only treats the database as in-memory when location is
+  // ":memory:". Passing that string as the name builds a file path, which
+  // Windows rejects because the colon is not a legal filename character.
+  const sqlite = open({ name: 'lnreader-test', location: ':memory:' });
   // drizzle-orm/op-sqlite expects executeAsync on the client
   (sqlite as any).executeAsync ??= sqlite.execute;
   (sqlite as any).executeRawAsync ??= sqlite.executeRaw;

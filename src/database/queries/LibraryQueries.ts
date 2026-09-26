@@ -142,6 +142,11 @@ export const getLibraryNovelsForGlobalUpdate = (
 export const getLibraryWithCategory = async (
   categoryId?: number | null,
   excludeLocalNovels?: boolean,
+  smartUpdateFilters: SmartUpdateFilters = {
+    skipCompleted: false,
+    skipUnstarted: false,
+    skipWithUnread: false,
+  },
 ) => {
   // First, get novel IDs associated with the specified category
   const categoryIdQuery = dbManager
@@ -170,6 +175,7 @@ export const getLibraryWithCategory = async (
         eq(novelSchema.inLibrary, true),
         inArray(novelSchema.id, novelIds),
         excludeLocalNovels ? eq(novelSchema.isLocal, false) : undefined,
+        ...smartUpdateConditions(smartUpdateFilters),
       ),
     )
     .all();

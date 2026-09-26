@@ -9,6 +9,7 @@ import { novelSchema, chapterSchema } from '@database/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import NativeFile from '@modules/native-file';
 import { insertChapters } from '@database/queries/ChapterQueries';
+import { stabilizeChapterPaths } from './stabilizeChapterPaths';
 
 /**
  * Update novel metadata in the database including cover image.
@@ -90,8 +91,35 @@ const updateNovelChapters = async (
     return;
   }
 
+  const existingIdentities = await dbManager
+    .select({
+      id: chapterSchema.id,
+      path: chapterSchema.path,
+      name: chapterSchema.name,
+      chapterNumber: chapterSchema.chapterNumber,
+      scanlator: chapterSchema.scanlator,
+    })
+    .from(chapterSchema)
+    .where(eq(chapterSchema.novelId, novelId))
+    .all();
+  const { chapters: stableChapters, rebinds } = stabilizeChapterPaths(
+    existingIdentities,
+    chapters,
+  );
+  if (rebinds.length) {
+    await dbManager.write(async tx => {
+      for (const rebind of rebinds) {
+        await tx
+          .update(chapterSchema)
+          .set({ path: rebind.path })
+          .where(eq(chapterSchema.id, rebind.id))
+          .run();
+      }
+    });
+  }
+
   const incomingPaths = Array.from(
-    new Set(chapters.map(chapter => chapter.path)),
+    new Set(stableChapters.map(chapter => chapter.path)),
   );
   const existingChapters = incomingPaths.length
     ? await dbManager
@@ -111,7 +139,7 @@ const updateNovelChapters = async (
   );
   const newPaths = incomingPaths.filter(path => !existingPathSet.has(path));
 
-  await insertChapters(novelId, chapters, {
+  await insertChapters(novelId, stableChapters, {
     page,
     touchUpdatedTime: true,
   });
@@ -133,7 +161,7 @@ const updateNovelChapters = async (
       .all();
 
     const chapterNameByPath = new Map(
-      chapters.map((chapter, index) => [
+      stableChapters.map((chapter, index) => [
         chapter.path,
         chapter.name || `Chapter ${index + 1}`,
       ]),

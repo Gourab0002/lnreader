@@ -93,6 +93,8 @@ export const insertChapters = async (
         page: ph('page'),
         position: ph('position'),
         scanlator: ph('scanlator'),
+        // Only new chapters belong on the Updates tab. Refreshing updatedTime
+        // when a source rewrites release text marks the whole library as new.
         ...(options?.touchUpdatedTime ? { updatedTime: nowSql } : {}),
       })
       .onConflictDoUpdate({
@@ -104,7 +106,6 @@ export const insertChapters = async (
           releaseTime: sql`excluded.releaseTime`,
           chapterNumber: sql`excluded.chapterNumber`,
           scanlator: sql`excluded.scanlator`,
-          ...(options?.touchUpdatedTime ? { updatedTime: nowSql } : {}),
         },
         where: sql`NOT (
           ${chapterSchema.page} IS excluded.page

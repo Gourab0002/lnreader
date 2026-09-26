@@ -110,7 +110,11 @@ const updateLibrary = async (
   try {
     let libraryNovels: DBNovelInfo[] = [];
     if (categoryId) {
-      libraryNovels = await getLibraryWithCategory(categoryId, true);
+      libraryNovels = await getLibraryWithCategory(
+        categoryId,
+        true,
+        smartUpdateFilters,
+      );
     } else {
       libraryNovels = await getLibraryNovelsForGlobalUpdate(
         getGlobalUpdateCategoryFilters(),

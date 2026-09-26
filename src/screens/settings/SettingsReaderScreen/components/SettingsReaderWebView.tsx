@@ -158,6 +158,7 @@ const SettingsReaderWebView = ({
 
   return (
     <WebView
+      key={`${customCSS ?? ''}\0${customJS ?? ''}`}
       ref={webViewRef}
       originWhitelist={['*']}
       allowFileAccess={true}
@@ -273,7 +274,12 @@ const SettingsReaderWebView = ({
               <script src="${assetsUriPrefix}/js/core.js"></script>
               <script src="${assetsUriPrefix}/js/index.js"></script>
               <script>
-                ${customJS ?? readerSettings.customJS}
+                function fn(){
+                  let html = document.querySelector('#LNReader-chapter').innerHTML;
+                  ${customJS ?? readerSettings.customJS}
+                  document.querySelector('#LNReader-chapter').innerHTML = html;
+                }
+                document.addEventListener('DOMContentLoaded', fn);
               </script>
             </html>
             `,

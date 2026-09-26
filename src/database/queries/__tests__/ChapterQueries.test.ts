@@ -455,6 +455,41 @@ describe('ChapterQueries', () => {
       expect(chapters[0].updatedTime).not.toBeNull();
     });
 
+    it('does not refresh updatedTime when an existing chapter changes', async () => {
+      const testDb = getTestDb();
+      const novelId = await insertTestNovel(testDb, { inLibrary: true });
+
+      await insertChapters(novelId, [
+        {
+          path: '/chapter/1',
+          name: 'Chapter 1',
+          releaseTime: '2 days ago',
+        },
+      ]);
+      await testDb.drizzleDb
+        .update(chapterSchema)
+        .set({ updatedTime: '2020-01-01T00:00:00.000Z' })
+        .where(eq(chapterSchema.novelId, novelId))
+        .run();
+
+      await insertChapters(
+        novelId,
+        [
+          {
+            path: '/chapter/1',
+            name: 'Chapter 1',
+            releaseTime: '3 days ago',
+          },
+        ],
+        { touchUpdatedTime: true },
+      );
+
+      const chapters = await getNovelChapters(novelId);
+      expect(chapters).toHaveLength(1);
+      expect(chapters[0].releaseTime).toBe('3 days ago');
+      expect(chapters[0].updatedTime).toBe('2020-01-01T00:00:00.000Z');
+    });
+
     it('should set releaseTime to null when preferNullReleaseTime is enabled', async () => {
       const testDb = getTestDb();
       const novelId = await insertTestNovel(testDb, { inLibrary: true });
