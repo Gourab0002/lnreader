@@ -211,18 +211,19 @@ window.tts = new (function () {
 
   this.normalizeText = text => {
     if (!text) return '';
-    // Android TTS reads decorative symbols aloud ("asterisk", "quote",
-    // "dot dot dot"). Keep letters and sentence punctuation, turn an ellipsis
-    // into a pause, and keep a bracketed question mark audible.
+    // Android TTS reads decorative symbols aloud ("asterisk", "dot dot dot").
+    // Dialogue quotes stay inside a sentence. They are removed only when they
+    // wrap the whole paragraph. An ellipsis becomes a pause, and a bracketed
+    // question mark stays audible.
     const normalized = text
       .replace(/\s+/g, ' ')
       .replace(/\[\s*\?\s*\]/g, ' ? ')
       .replace(/\.{3,}|…+/g, ', ')
-      .replace(/["“”«»„‟「」『』【】〔〕（）〈〉《》＜＞()[\]{}]/g, ' ')
+      .replace(/[「」『』【】〔〕（）〈〉《》＜＞()[\]{}]/g, ' ')
       .replace(/[*#~_=+|\\/<>^`@$%&※†‡•◦●★☆♪♫〜～〰]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
-      .replace(/^['’]+|['’]+$/g, '')
+      .replace(/^["'“”‘’«»„‟]+|["'“”‘’«»„‟]+$/g, '')
       .replace(/\s*([.,!?;:])\s*/g, '$1 ')
       .trim();
 
